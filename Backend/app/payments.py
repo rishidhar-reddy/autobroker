@@ -19,18 +19,21 @@ nodes (BE-4) to exercise a realistic create -> confirm flow:
 An unknown `payment_intent_id` or an amount mismatch raises
 PaymentValidationError, which graph.py logs as
 execution_status="ValidationError".
+
+PaymentIntents are persisted through `app.store` rather than held in a module
+dict, so an intent created before a restart can still be confirmed afterwards
+and a second worker can confirm one the first worker created.
 """
 
 import time
 import uuid
 
+from app import store
+
 
 class PaymentValidationError(Exception):
     """Raised when a mock Stripe call references an unknown PaymentIntent
     or supplies a value that doesn't match the stored PaymentIntent."""
-
-
-_PAYMENT_INTENTS: dict[str, dict] = {}
 
 
 def create_payment_request(
@@ -58,7 +61,7 @@ def create_payment_request(
             "quantity": quantity,
         },
     }
-    _PAYMENT_INTENTS[payment_intent_id] = payment_intent
+    store.save_payment_intent(payment_intent)
 
     return {
         "payment_intent_id": payment_intent_id,
@@ -73,7 +76,7 @@ def authorize_payment(
     payment_method_token: str,
     authorized_amount: float,
 ) -> dict:
-    payment_intent = _PAYMENT_INTENTS.get(payment_intent_id)
+    payment_intent = store.get_payment_intent(payment_intent_id)
     if payment_intent is None:
         raise PaymentValidationError(f"Unknown payment_intent_id: {payment_intent_id!r}")
 
@@ -86,6 +89,7 @@ def authorize_payment(
 
     payment_intent["status"] = "succeeded"
     payment_intent["payment_method"] = payment_method_token
+    store.save_payment_intent(payment_intent)
 
     return {
         "payment_intent_id": payment_intent_id,

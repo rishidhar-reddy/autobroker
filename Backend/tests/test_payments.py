@@ -1,11 +1,11 @@
 import pytest
 
-from app import payments
+from app import payments, store
 
 
 @pytest.fixture(autouse=True)
 def _clear_payment_intents():
-    payments._PAYMENT_INTENTS.clear()
+    store.reset()
 
 
 def test_create_payment_request_returns_requires_confirmation_intent():
