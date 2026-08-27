@@ -1,22 +1,104 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Theme tokens. Light is defined on bare :root so a page with no explicit
+   preference still has a complete palette; dark redefines only what changes,
+   under both the media query and an explicit [data-theme] so a manual toggle
+   wins in either direction.
+--------------------------------------------------------------------------- */
+:root {
+  --surface:        #fcfcfb;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f4f4f2;
+  --border:         #e4e4e1;
+  --border-strong:  #d3d3cf;
+
+  --ink:            #1a1a19;
+  --ink-secondary:  #55554f;
+  --ink-muted:      #86867e;
+
+  --accent:         #3b5bdb;
+  --accent-ink:     #ffffff;
+  --accent-soft:    #eef1fd;
+
+  /* Status palette — fixed, never themed. Always rendered with an icon and a
+     text label so the colour never carries meaning on its own. */
+  --status-good:     #0ca30c;
+  --status-warning:  #fab219;
+  --status-serious:  #ec835a;
+  --status-critical: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface:        #1a1a19;
+    --surface-raised: #232322;
+    --surface-sunken: #141413;
+    --border:         #33332f;
+    --border-strong:  #45453f;
+
+    --ink:            #f2f2ef;
+    --ink-secondary:  #b4b4ac;
+    --ink-muted:      #85857c;
+
+    --accent:         #849bf0;
+    --accent-ink:     #14142a;
+    --accent-soft:    #22243a;
+  }
+}
+
+:root[data-theme="dark"] {
+  --surface:        #1a1a19;
+  --surface-raised: #232322;
+  --surface-sunken: #141413;
+  --border:         #33332f;
+  --border-strong:  #45453f;
+
+  --ink:            #f2f2ef;
+  --ink-secondary:  #b4b4ac;
+  --ink-muted:      #85857c;
+
+  --accent:         #849bf0;
+  --accent-ink:     #14142a;
+  --accent-soft:    #22243a;
+}
+
+@theme inline {
+  --color-surface:        var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-border-base:    var(--border);
+  --color-border-strong:  var(--border-strong);
+  --color-ink:            var(--ink);
+  --color-ink-secondary:  var(--ink-secondary);
+  --color-ink-muted:      var(--ink-muted);
+  --color-accent:         var(--accent);
+  --color-accent-ink:     var(--accent-ink);
+  --color-accent-soft:    var(--accent-soft);
+  --color-good:           var(--status-good);
+  --color-warning:        var(--status-warning);
+  --color-serious:        var(--status-serious);
+  --color-critical:       var(--status-critical);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+html { color-scheme: light dark; }
 
 body {
-  font-family: ui-monospace, Consolas, monospace;
-  background: #111;
-  color: #e0e0e0;
-  min-height: 100vh;
-  padding: 2rem;
+  background-color: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-#root {
-  max-width: 900px;
-  margin: 0 auto;
+@keyframes fade-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
 }
+.animate-fade-rise { animation: fade-rise 260ms ease-out both; }
 
-h1 {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 1.5rem;
-  letter-spacing: 0.02em;
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-rise { animation: none; }
+  * { transition-duration: 1ms !important; }
 }
