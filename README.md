@@ -1,3 +1,7 @@
+> **Portfolio note:** this repository preserves the original team's full commit history.
+> For what I personally contributed here, see [PORTFOLIO.md](PORTFOLIO.md).
+> Architecture walkthrough: [docs/SYSTEM-DEEPDIVE.md](docs/SYSTEM-DEEPDIVE.md)
+
 # Agentic Negotiation & Procurement Platform
 
 > Autonomous AI agents that negotiate deals and settle payments — no humans required.
