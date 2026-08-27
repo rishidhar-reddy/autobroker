@@ -71,6 +71,32 @@ def test_guardrail_terminates_when_buyer_accepts_above_ceiling():
     assert update["status"] == "TERMINATED"
 
 
+def test_guardrail_terminates_when_buyer_counters_above_ceiling():
+    """The buyer's system prompt forbids it to "accept or offer" above its
+    ceiling, and the vendor's floor is enforced on every offer regardless of
+    action. The buyer ceiling must be enforced the same way, otherwise an
+    agent can propose a price it is not allowed to pay and only get caught
+    if the vendor happens to accept it."""
+    state = _state_with_messages(
+        [_message("BuyerAgent", BUYER_CONFIG["Buyer_Ceiling_Price"] + 1, 200, "COUNTER")]
+    )
+
+    update = guardrail_validator(state)
+
+    assert update["status"] == "TERMINATED"
+
+
+def test_guardrail_allows_buyer_counter_at_exactly_the_ceiling():
+    """The bound is inclusive: the ceiling itself is a legal offer."""
+    state = _state_with_messages(
+        [_message("BuyerAgent", BUYER_CONFIG["Buyer_Ceiling_Price"], 200, "COUNTER")]
+    )
+
+    update = guardrail_validator(state)
+
+    assert update["status"] == "NEGOTIATING"
+
+
 def test_guardrail_terminates_when_turn_limit_exceeded():
     state = _state_with_messages(
         [_message("BuyerAgent", 9.00, 200, "COUNTER")], turn=MAX_TURNS

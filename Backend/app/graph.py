@@ -236,10 +236,12 @@ def guardrail_validator(state: NegotiationState) -> dict:
         status = "TERMINATED"
     elif (
         sender == "BuyerAgent"
-        and action == "ACCEPT"
         and price is not None
         and price > buyer_config["Buyer_Ceiling_Price"]
     ):
+        # Enforced on every offer, not just ACCEPT, mirroring the vendor floor
+        # check above. The buyer's system prompt forbids it to "accept or offer"
+        # above this bound, so proposing one is already a violation.
         status = "TERMINATED"
     elif turn > MAX_TURNS:
         status = "TERMINATED"

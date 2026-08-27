@@ -87,11 +87,13 @@ agent therefore sees a coherent first-person dialogue rather than a third-person
 | `action == ACCEPT` | `AGREEMENT` |
 | otherwise | `NEGOTIATING` |
 
-**An asymmetry worth flagging:** the vendor floor is checked on *any* offer, but the buyer
-ceiling is only checked when `action == "ACCEPT"` (line 237-243). A buyer can therefore
-*propose* a price above its own ceiling without being terminated — it is only caught if it
-accepts one. Whether that is intentional (proposing high is harmless; committing is not)
-or an oversight, it is the first thing I would write a test for.
+**An asymmetry that was here, and is now fixed:** the vendor floor was checked on *any*
+offer, but the buyer ceiling only when `action == "ACCEPT"`. A buyer could therefore
+*propose* a price above its own ceiling and only be caught if it later accepted one —
+even though its system prompt forbids it to "accept **or offer**" above that bound.
+The check now mirrors the vendor's and applies to every offer, covered by
+`test_guardrail_terminates_when_buyer_counters_above_ceiling` and an inclusive-bound
+test asserting the ceiling itself remains a legal offer.
 
 The turn cap at `MAX_TURNS = 10` guarantees termination, so the graph cannot loop forever.
 
@@ -169,17 +171,15 @@ The deterministic mock strategy is what makes the state machine testable end to 
 | **All state is in-process** | `NEGOTIATIONS` (`main.py:20`) and `_PAYMENT_INTENTS` are plain dicts. A restart loses every negotiation; a second worker sees none of them. |
 | **CORS is fully open** | `allow_origins=["*"]` with all methods and headers (`main.py:11-16`). Fine for a hackathon demo, not for deployment. |
 | **No authentication** | Any caller can start a negotiation or read any transaction by ID. |
-| **Buyer ceiling asymmetry** | See section 4. |
 | **Hardcoded domain config** | `config.py` fixes a single vendor/buyer pair, so the demo cannot show multiple products. |
 | **Payments are mocked** | Intentional and documented, but it is not a real settlement. |
 
 ### What I would build next
 
-1. A test asserting the buyer-ceiling asymmetry is deliberate — then fix or document it.
-2. Persist negotiations to Postgres so the API can scale past one worker.
-3. Lock CORS to the UI origin and add an API key on `/negotiations/start`.
-4. Parameterize `config.py` so a negotiation is started with a product payload.
-5. A retry path for malformed LLM output — currently a missing tag yields `None` price,
+1. Persist negotiations to Postgres so the API can scale past one worker.
+2. Lock CORS to the UI origin and add an API key on `/negotiations/start`.
+3. Parameterize `config.py` so a negotiation is started with a product payload.
+4. A retry path for malformed LLM output — currently a missing tag yields `None` price,
    which the guardrail treats as "no constraint violated."
 
 ---
