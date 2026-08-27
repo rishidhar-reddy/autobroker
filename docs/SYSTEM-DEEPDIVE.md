@@ -168,21 +168,32 @@ The deterministic mock strategy is what makes the state machine testable end to 
 
 | Gap | Detail |
 |---|---|
-| **All state is in-process** | `NEGOTIATIONS` (`main.py:20`) and `_PAYMENT_INTENTS` are plain dicts. A restart loses every negotiation; a second worker sees none of them. |
-| **CORS is fully open** | `allow_origins=["*"]` with all methods and headers (`main.py:11-16`). Fine for a hackathon demo, not for deployment. |
-| **No authentication** | Any caller can start a negotiation or read any transaction by ID. |
-| **Hardcoded domain config** | `config.py` fixes a single vendor/buyer pair, so the demo cannot show multiple products. |
 | **Payments are mocked** | Intentional and documented, but it is not a real settlement. |
+| **Single-host persistence** | SQLite is durable and shared across workers on one machine, but does not span hosts. Postgres is the next step if this ever runs on more than one. |
+| **No rate limiting** | The API key gates *who* can start a negotiation, not *how many* they can start. |
+| **Mock strategy is deterministic** | Without credentials both agents converge by midpoint arithmetic, so the transcript is reproducible but not a real language-model negotiation. |
+| **No LICENSE** | Neither a file nor a declaration, here or upstream. |
+
+### Closed since the first review
+
+These were listed as gaps and have since been fixed — see the git history.
+
+| Was | Now |
+|---|---|
+| Buyer ceiling enforced only on `ACCEPT` | Enforced on every offer, symmetric with the vendor floor |
+| All state in process dicts | SQLite-backed via `app/store.py`; survives restart, shared across workers |
+| `allow_origins=["*"]` | Driven by `ALLOWED_ORIGINS`, defaulting to local dev origins |
+| No authentication | `API_KEY` guards mutating endpoints with a constant-time compare |
+| One hardcoded vendor/buyer pair | `app/catalog.py` with three products and a `product_id` parameter |
+| Telemetry written but never read | `GET /stats` aggregates it; the UI renders it |
 
 ### What I would build next
 
-1. Persist negotiations to Postgres so the API can scale past one worker.
-2. Lock CORS to the UI origin and add an API key on `/negotiations/start`.
-3. Parameterize `config.py` so a negotiation is started with a product payload.
-4. A retry path for malformed LLM output — currently a missing tag yields `None` price,
-   which the guardrail treats as "no constraint violated."
-
----
+1. Postgres behind the same `store.py` interface, for multi-host deployment.
+2. Per-key rate limiting on `/negotiations/start`.
+3. A retry path for malformed LLM output — a missing tag yields a `None` price,
+   which the guardrail currently treats as "no constraint violated".
+4. Server-sent events instead of 1-second polling.
 
 ## 9. Provenance and attribution
 

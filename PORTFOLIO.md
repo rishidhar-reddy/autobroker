@@ -75,17 +75,56 @@ protocol, the perspective rewrite in `_conversation_messages` that gives each ag
 coherent first-person transcript, and the `NotImplementedError` fallback that makes the
 whole graph testable without credentials.
 
+### Built the platform layer out (`feat: persistence, product catalog, API auth and negotiation stats`)
+
+Four gaps that blocked building anything on top of the service:
+
+- **Persistence.** Negotiations and payment intents lived in module dicts, so
+  every run died with the process and a second worker saw none of the first
+  worker's state — `GET /negotiations/{id}` would 404 at random behind any real
+  deployment. Now SQLite-backed, persisting every streamed step so a crash
+  leaves a readable partial transcript.
+- **Product catalog.** One hardcoded vendor/buyer pair became a three-product
+  catalog with an optional `product_id`, and a `has_overlap` flag that makes an
+  unsettleable price range visible before you start.
+- **Security.** `allow_origins=["*"]` and no auth became configurable origins
+  defaulting to local, plus an `API_KEY` guard using a constant-time compare.
+  Reads stay open — the point is to guard spend, not inspection.
+- **Observability.** `telemetry.py` wrote every message to ClickHouse and
+  nothing ever read it back. `GET /stats` aggregates convergence rate, average
+  turns to settle, and deal values.
+
+26 new tests. Suite 52 → 78.
+
+### Rebuilt the frontend (`feat(ui): rebuild the interface on Tailwind with a component system`)
+
+880 lines of bare React over hand-rolled CSS, rebuilt on Tailwind v4 with
+shadcn-style primitives composed via `cva` and `tailwind-merge`. Product
+selection, a two-sided transcript that lifts the structured offer tag out of the
+prose, live stats, and OS-following theming with a persisted manual override.
+
+Status is never colour-alone — every state pairs a reserved status colour with an
+icon and a label, which matters because two of those steps sit below 3:1 on the
+light surface by design. The stats are stat tiles rather than charts: six
+single-value measures with no series and no time axis.
+
+Verified against a live backend in both themes. Two layout bugs were caught only
+by looking at the render — long payment ids overflowed the invoice card
+(`truncate` needs `min-w-0` on both the grid item *and* the flex child), and the
+transcript clipped its newest offer until the scroll was deferred a frame and
+moved onto the container itself.
+
 ---
 
 ## What I would build next
 
-1. Persist negotiations to a database. `NEGOTIATIONS` and `_PAYMENT_INTENTS` are
-   in-process dicts, so a restart loses every negotiation and a second worker sees none.
-2. Lock CORS to the UI origin — it is currently `allow_origins=["*"]` — and add auth on
-   `/negotiations/start`.
-3. Parameterize `config.py`, which currently fixes a single vendor/buyer pair.
-4. A retry path for malformed LLM output. A missing offer tag yields a `None` price,
-   which the guardrail treats as "no constraint violated."
+1. Postgres behind the same `store.py` interface, so the service can run on more
+   than one host.
+2. Per-key rate limiting on `/negotiations/start` — the API key gates who can
+   start a run, not how many.
+3. A retry path for malformed LLM output. A missing offer tag yields a `None`
+   price, which the guardrail treats as "no constraint violated."
+4. Server-sent events instead of 1-second polling.
 5. A LICENSE file — there is currently none, in this repo or upstream.
 
 ---
