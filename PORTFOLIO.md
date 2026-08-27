@@ -45,9 +45,11 @@ stand on its own; one real bug found and fixed with tests is a perfectly good st
 
 ## My contributions in this repository
 
-Verifiable with `git log --author="Rishi Dhar"`.
+Verifiable with `git log --author="Rishidhar Reddy Garlapati"`.
 
-### Found and fixed an asymmetric guardrail (`348a7e8`)
+### Found and fixed an asymmetric guardrail
+
+> commit `fix: enforce the buyer price ceiling on every offer, not only on ACCEPT`
 
 The guardrail enforced the vendor's price floor against **every** offer, but enforced
 the buyer's price ceiling **only when the action was ACCEPT**. The buyer's own system
@@ -63,7 +65,9 @@ offer.
 
 Test suite: **50 → 52 tests, all passing.**
 
-### Documented the architecture (`8974686`)
+### Documented the architecture
+
+> commit `docs: add engineering deep dive of the negotiation graph and payment flow`
 
 A component-level deep dive traced to specific files and lines: the graph topology and
 why the guardrail node is structurally unavoidable rather than advisory, the offer-tag
